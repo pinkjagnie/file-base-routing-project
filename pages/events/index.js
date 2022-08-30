@@ -1,3 +1,5 @@
+import Head from "next/head";
+
 import { useRouter } from "next/router";
 
 import { getAllEvents } from "../../helpers/api-util";
@@ -17,6 +19,13 @@ const AllEventsPage = (props) => {
 
   return (
     <div>
+      <Head>
+        <title>All NextJS events</title>
+        <meta
+          name="description"
+          content="A lot of fun events! Find one for yourself and become a better version of yourself"
+        />
+      </Head>
       <EventSearch onSearch={findEventsHandler} />
       <EventList items={events} />
     </div>
