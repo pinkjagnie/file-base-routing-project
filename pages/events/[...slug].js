@@ -1,71 +1,43 @@
+import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
+import useSWR from "swr";
 
 import ErrorAlert from "../../components/ui/error-alert";
 import Button from "../../components/ui/button";
 import ResultsTitle from "../../components/events/results-title";
 import EventList from "../../components/events/event-list";
 
-import { getFilteredEvents } from "../../helpers/api-util";
+// import { getFilteredEvents } from "../../helpers/api-util";
 
 const FilteredEventsPage = (props) => {
+  const [loadedEvents, setLoadedEvents] = useState();
   const router = useRouter();
 
-  // const filteredData = router.query.slug;
+  const filteredData = router.query.slug;
 
-  // if (!filteredData) {
-  //   return <p className="center">Loading...</p>;
-  // }
-
-  // const filteredYear = filteredData[0];
-  // const filteredMonth = filteredData[1];
-
-  // const numberYear = +filteredYear;
-  // const numberMonth = +filteredMonth;
-
-  if (props.hasError) {
-    return (
-      <>
-        <ErrorAlert>
-          <p>Invalid filter. Please select one more time!</p>
-        </ErrorAlert>
-        <div className="center">
-          <Button link="/events">Show all events</Button>
-        </div>
-      </>
-    );
-  }
-
-  const filteredEventsList = props.events;
-
-  if (!filteredEventsList || filteredEventsList.length === 0) {
-    return (
-      <>
-        <ErrorAlert>
-          <p>No events has been planned for selected period</p>
-        </ErrorAlert>
-        <div className="center">
-          <Button link="/events">Show all events</Button>
-        </div>
-      </>
-    );
-  }
-
-  const date = new Date(props.date.year, props.date.month - 1);
-
-  return (
-    <div>
-      <ResultsTitle date={date} />
-      <EventList items={filteredEventsList} />
-    </div>
+  const { data, error } = useSWR(
+    "https://nextjs-events-project-c8bc8-default-rtdb.europe-west1.firebasedatabase.app/events.json",
+    (url) => fetch(url).then((res) => res.json())
   );
-};
 
-export default FilteredEventsPage;
+  useEffect(() => {
+    if (data) {
+      const events = [];
 
-export async function getServerSideProps(context) {
-  const { params } = context;
+      for (const key in data) {
+        events.push({
+          id: key,
+          ...data[key],
+        });
+      }
 
-  const filteredData = params.slug;
+      setLoadedEvents(events);
+    }
+  }, [data]);
+
+  if (!loadedEvents) {
+    return <p className="center">Loading...</p>;
+  }
 
   const filteredYear = filteredData[0];
   const filteredMonth = filteredData[1];
@@ -79,23 +51,88 @@ export async function getServerSideProps(context) {
     numberYear > 2023 ||
     numberYear < 2021 ||
     numberMonth < 1 ||
-    numberMonth > 12
+    numberMonth > 12 ||
+    error
   ) {
-    return { props: { hasError: true } };
+    return (
+      <>
+        <ErrorAlert>
+          <p>Invalid filter. Please select one more time!</p>
+        </ErrorAlert>
+        <div className="center">
+          <Button link="/events">Show all events</Button>
+        </div>
+      </>
+    );
   }
 
-  const filteredEventsList = await getFilteredEvents({
-    year: numberYear,
-    month: numberMonth,
+  const filteredEvents = loadedEvents.filter((event) => {
+    const eventDate = new Date(event.date);
+    return (
+      eventDate.getFullYear() === numberYear &&
+      eventDate.getMonth() === numberMonth - 1
+    );
   });
 
-  return {
-    props: {
-      events: filteredEventsList,
-      date: {
-        year: numberYear,
-        month: numberMonth,
-      },
-    },
-  };
-}
+  if (!filteredEvents || filteredEvents.length === 0) {
+    return (
+      <>
+        <ErrorAlert>
+          <p>No events has been planned for selected period</p>
+        </ErrorAlert>
+        <div className="center">
+          <Button link="/events">Show all events</Button>
+        </div>
+      </>
+    );
+  }
+
+  const date = new Date(numberYear, numberMonth - 1);
+
+  return (
+    <div>
+      <ResultsTitle date={date} />
+      <EventList items={filteredEvents} />
+    </div>
+  );
+};
+
+export default FilteredEventsPage;
+
+// export async function getServerSideProps(context) {
+//   const { params } = context;
+
+//   const filteredData = params.slug;
+
+//   const filteredYear = filteredData[0];
+//   const filteredMonth = filteredData[1];
+
+//   const numberYear = +filteredYear;
+//   const numberMonth = +filteredMonth;
+
+//   if (
+//     isNaN(numberYear) ||
+//     isNaN(numberMonth) ||
+//     numberYear > 2023 ||
+//     numberYear < 2021 ||
+//     numberMonth < 1 ||
+//     numberMonth > 12
+//   ) {
+//     return { props: { hasError: true } };
+//   }
+
+//   const filteredEventsList = await getFilteredEvents({
+//     year: numberYear,
+//     month: numberMonth,
+//   });
+
+//   return {
+//     props: {
+//       events: filteredEventsList,
+//       date: {
+//         year: numberYear,
+//         month: numberMonth,
+//       },
+//     },
+//   };
+// }
