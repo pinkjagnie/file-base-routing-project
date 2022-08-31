@@ -1,0 +1,6 @@
+const config = {
+  urlMongo:
+    "MongoDB url standard format",
+};
+
+export default config;
