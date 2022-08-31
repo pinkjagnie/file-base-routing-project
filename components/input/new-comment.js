@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useContext, useRef, useState } from "react";
 import styles from "./new-comment.module.css";
 
 function NewComment(props) {
@@ -52,7 +52,7 @@ function NewComment(props) {
         <textarea id="comment" rows="5" ref={commentInputRef}></textarea>
       </div>
       {isInvalid && <p>Please enter a valid email address and comment!</p>}
-      <button>Submit</button>
+      <button className={styles.button}>Submit</button>
     </form>
   );
 }
